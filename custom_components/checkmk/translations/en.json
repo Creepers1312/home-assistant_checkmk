@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Checkmk",
+        "description": "Enter the URL of your Checkmk site and the credentials of an automation user.",
+        "data": {
+          "url": "Site URL",
+          "username": "Automation user",
+          "password": "Automation secret",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "url": "Base URL of the Checkmk site, e.g. https://monitoring.example.com/mysite",
+          "username": "Name of a Checkmk user with an automation secret",
+          "password": "The automation secret of that user"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Checkmk",
+        "description": "The stored credentials are no longer valid. Enter them again.",
+        "data": {
+          "username": "Automation user",
+          "password": "Automation secret"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Checkmk site.",
+      "invalid_auth": "Invalid automation user or secret.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Checkmk site is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Checkmk options",
+        "data": {
+          "scan_interval": "Update interval (seconds)",
+          "create_metric_sensors": "Create sensors for service performance metrics"
+        }
+      }
+    }
+  }
+}

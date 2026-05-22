@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mit Checkmk verbinden",
+        "description": "Gib die URL deiner Checkmk-Site und die Zugangsdaten eines Automationsbenutzers ein.",
+        "data": {
+          "url": "Site-URL",
+          "username": "Automationsbenutzer",
+          "password": "Automations-Secret",
+          "verify_ssl": "SSL-Zertifikat prüfen"
+        },
+        "data_description": {
+          "url": "Basis-URL der Checkmk-Site, z. B. https://monitoring.example.com/meinesite",
+          "username": "Name eines Checkmk-Benutzers mit Automations-Secret",
+          "password": "Das Automations-Secret dieses Benutzers"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut bei Checkmk anmelden",
+        "description": "Die gespeicherten Zugangsdaten sind nicht mehr gültig. Bitte erneut eingeben.",
+        "data": {
+          "username": "Automationsbenutzer",
+          "password": "Automations-Secret"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur Checkmk-Site fehlgeschlagen.",
+      "invalid_auth": "Ungültiger Automationsbenutzer oder ungültiges Secret.",
+      "unknown": "Ein unerwarteter Fehler ist aufgetreten."
+    },
+    "abort": {
+      "already_configured": "Diese Checkmk-Site ist bereits eingerichtet.",
+      "reauth_successful": "Die erneute Anmeldung war erfolgreich."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Checkmk-Optionen",
+        "data": {
+          "scan_interval": "Aktualisierungsintervall (Sekunden)",
+          "create_metric_sensors": "Sensoren für Service-Performance-Metriken erstellen"
+        }
+      }
+    }
+  }
+}
