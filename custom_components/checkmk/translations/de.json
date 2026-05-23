@@ -11,7 +11,7 @@
           "verify_ssl": "SSL-Zertifikat prüfen"
         },
         "data_description": {
-          "url": "Basis-URL der Checkmk-Site, z. B. https://monitoring.example.com/meinesite",
+          "url": "Basis-URL der Checkmk-Site inklusive Site-Pfad (ohne /check_mk/-Suffix).",
           "username": "Name eines Checkmk-Benutzers mit Automations-Secret",
           "password": "Das Automations-Secret dieses Benutzers"
         }

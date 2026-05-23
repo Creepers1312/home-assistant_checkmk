@@ -11,7 +11,7 @@
           "verify_ssl": "Verify SSL certificate"
         },
         "data_description": {
-          "url": "Base URL of the Checkmk site, e.g. https://monitoring.example.com/mysite",
+          "url": "Base URL of the Checkmk site, including the site name path (no /check_mk/ suffix).",
           "username": "Name of a Checkmk user with an automation secret",
           "password": "The automation secret of that user"
         }

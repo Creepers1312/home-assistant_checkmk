@@ -23,6 +23,9 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # ``topics`` requires the user to set them in the GitHub repo
+          # settings - keep ignored until that's done.
+          ignore: topics
 
   tests:
     name: Tests (Python ${{ matrix.python-version }})
