@@ -153,6 +153,51 @@ logger:
 Diagnosedaten lassen sich über die Integrationsseite herunterladen
 (das Secret wird dabei geschwärzt).
 
+## Lokal mit Docker testen
+
+Im Repo liegt eine [`docker-compose.yml`](docker-compose.yml), die parallel
+einen Home‑Assistant‑Container und eine Checkmk Raw Edition startet. Der
+`custom_components/checkmk`‑Ordner wird live in den HA‑Container gemountet,
+sodass Code‑Änderungen nach einem HA‑Neustart sofort wirken.
+
+```bash
+docker compose up -d
+```
+
+Das legt einen `./config/`‑Ordner für den HA‑State an (von `.gitignore`
+abgedeckt). Beide Container brauchen beim ersten Start ~30 Sekunden.
+
+### Checkmk-Site initialisieren
+
+1. http://localhost:5000/cmk öffnen, einloggen als `cmkadmin` /
+   `cmkadminpw` (siehe `CMK_PASSWORD` in der Compose‑Datei).
+2. **Setup → Users → Add user** und einen Benutzer `automation` anlegen.
+3. Unter *Authentication* ein **Automation secret** generieren und
+   kopieren. Die Rolle `monitor` (oder höher) zuweisen.
+4. Oben rechts **Activate pending changes** klicken.
+5. Optional: damit überhaupt ein Host überwacht wird, **Setup → Hosts →
+   Add host** ausführen und ein Service Discovery durchlaufen.
+
+### Integration in Home Assistant einrichten
+
+1. http://localhost:8123 öffnen und das HA‑Onboarding durchklicken.
+2. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Checkmk**.
+3. Felder:
+   - Site‑URL: `http://checkmk:5000/cmk` (über den compose‑internen Namen,
+     nicht `localhost`)
+   - Automationsbenutzer: `automation`
+   - Automations‑Secret: das eben erzeugte Secret
+4. Nach dem Speichern erscheinen die Hub‑, Host‑ und Service‑Geräte.
+
+### Nützliche Befehle
+
+| Zweck | Befehl |
+| --- | --- |
+| Logs der Integration | `docker logs -f ha-checkmk-dev` |
+| HA nach Code‑Änderung neu laden | `docker restart ha-checkmk-dev` |
+| Stack stoppen | `docker compose down` |
+| Stack inkl. State löschen | `docker compose down -v && rm -rf config` |
+
 ## Haftungsausschluss
 
 Dieses Projekt ist ein inoffizielles Community-Projekt und steht in keiner

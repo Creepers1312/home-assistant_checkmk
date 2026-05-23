@@ -1,0 +1,30 @@
+# Entwicklungs-Stack: Home Assistant + Checkmk Raw Edition.
+# Siehe README ("Lokal mit Docker testen") für die Schritt-für-Schritt-Anleitung.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: ha-checkmk-dev
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    environment:
+      TZ: Europe/Berlin
+    volumes:
+      - ./config:/config
+      # Live-Mount der Integration: Änderungen am Code wirken nach einem
+      # "Server-Management → Server neu starten" sofort.
+      - ./custom_components:/config/custom_components
+    depends_on:
+      - checkmk
+
+  checkmk:
+    image: checkmk/check-mk-raw:latest
+    container_name: cmk-dev
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      CMK_SITE_ID: cmk
+      CMK_PASSWORD: cmkadminpw
+    tmpfs:
+      - /opt/omd/sites/cmk/tmp
