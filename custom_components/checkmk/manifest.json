@@ -3,10 +3,10 @@
   "name": "Checkmk",
   "codeowners": ["@Creepers1312"],
   "config_flow": true,
-  "documentation": "https://github.com/Creepers1312/checkmk-homeassistant",
+  "documentation": "https://github.com/Creepers1312/home-assistant_checkmk",
   "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/Creepers1312/checkmk-homeassistant/issues",
+  "issue_tracker": "https://github.com/Creepers1312/home-assistant_checkmk/issues",
   "requirements": [],
   "version": "0.2.0"
 }

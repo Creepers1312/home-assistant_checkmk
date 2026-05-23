@@ -1,6 +1,6 @@
 # Checkmk für Home Assistant
 
-[![Validate](https://github.com/Creepers1312/checkmk-homeassistant/actions/workflows/validate.yml/badge.svg)](https://github.com/Creepers1312/checkmk-homeassistant/actions/workflows/validate.yml)
+[![Validate](https://github.com/Creepers1312/home-assistant_checkmk/actions/workflows/validate.yml/badge.svg)](https://github.com/Creepers1312/home-assistant_checkmk/actions/workflows/validate.yml)
 [![hacs](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 
 Eine benutzerdefinierte [Home Assistant](https://www.home-assistant.io/)-Integration,
@@ -40,7 +40,7 @@ die Monitoring-Daten aus [Checkmk](https://checkmk.com/) über die REST API
 ### Über HACS (empfohlen)
 
 1. HACS → **Integrationen** → Menü oben rechts → **Benutzerdefinierte Repositories**
-2. Repository `https://github.com/Creepers1312/checkmk-homeassistant`
+2. Repository `https://github.com/Creepers1312/home-assistant_checkmk`
    mit Kategorie **Integration** hinzufügen
 3. „Checkmk" suchen, installieren und Home Assistant neu starten
 
