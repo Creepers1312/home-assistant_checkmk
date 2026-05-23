@@ -49,7 +49,7 @@ hacs.json
 
 ## Home Assistant gotchas (we have actually hit these)
 
-- **Brand assets**: HACS looks for `custom_components/<domain>/brand/icon.png`, *not* the integration root. HA core 2026.3+ also reads them from this `brand/` subdirectory.
+- **Brand assets**: lives in `custom_components/<domain>/brand/{icon,icon@2x,logo,logo@2x}.png`. HACS validates the path; HA 2026.3+ serves the same files via the Brands Proxy API for any UI surface that uses it. **Do not** open a PR against `home-assistant/brands` for a custom integration - the repo's bot auto-closes those PRs (policy change with HA 2026.3, see [the announcement](https://developers.home-assistant.io/blog/2026/02/24/brands-proxy-api/)). The HACS update dialog may still show "icon not available" because HACS hasn't switched to the proxy URL yet; that's a HACS-side issue, no code change on our side can fix it.
 - **Translations**: hassfest rejects URLs inside `data_description` values. Write `"Base URL of the Checkmk site, including the site name path"` instead of `"e.g. https://..."`. Examples with URLs belong in the README.
 - **Tests**: every test that uses the `hass` fixture also needs `enable_custom_integrations`. Conftest applies it autouse - do not remove it, every config-flow test will die with `IntegrationNotFound`.
 - **Service registration** lives in `async_setup_entry` and uses `hass.services.has_service` to be idempotent across reloads. Do not unregister on unload - HA keeps services registered for the life of the integration install.
