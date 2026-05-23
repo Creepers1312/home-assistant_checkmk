@@ -75,6 +75,23 @@ Die Site-URL ist die Basis-URL **inklusive Site-Namen**, aber ohne `/check_mk/..
 > Aktualisierungsintervall erhöhen. Nicht benötigte Sensoren lassen sich in
 > Home Assistant deaktivieren.
 
+### Anzeige im Home Assistant
+
+Damit das Dashboard übersichtlich bleibt, sind die Entitäten in drei Sichtbarkeits-Tiers eingeteilt:
+
+| Tier | Sektion am Gerät | Default | Beispiele |
+| --- | --- | --- | --- |
+| **Primary** | "Sensoren" | aktiviert | Host-Status, Site-Problem, `util`, `mem_used_percent`, `fs_used_percent`, `load1`, Interface `in`/`out`, `uptime` |
+| **Diagnose (sichtbar)** | "Diagnose" | aktiviert | Service-Status pro Service, Service-Problem, `mem_free`/`mem_total`, Disk-Throughput, TCP `ESTABLISHED`/`LISTEN` |
+| **Diagnose (versteckt)** | "Diagnose" | deaktiviert | Memory-Submetriken (`zswap`, `unaccepted`, ...), Kernel-Counter, Interface-Paket-Zähler, TCP-Detail-States |
+
+Versteckte Entitäten existieren im Entity-Registry weiter — du kannst sie pro Stück enablen unter **Einstellungen → Geräte & Dienste → Entitäten** (Filter „Deaktiviert: nur").
+
+> **Update von älteren Versionen:** HA wendet die neuen Defaults nur auf
+> *neu entdeckte* Entitäten an. Wenn du nach einem Update die alte volle
+> Liste loswerden willst, entferne die Integration einmal komplett und
+> richte sie neu ein.
+
 ## Services
 
 Die Integration registriert drei Services, die per Automation oder im

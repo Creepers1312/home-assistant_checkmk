@@ -57,6 +57,11 @@ hacs.json
 - **404 on the API root** = wrong site URL, not "unknown error". `api._request` maps it to `CheckmkConnectionError` so the config flow can surface `cannot_connect`.
 - **No `reschedule_check` service.** Checkmk's REST API does not expose reschedule_check anywhere (verified against the `/openapi-swagger-ui.json` of a 2.4 site - it lives only in the Web UI / Livestatus). Do not re-add it. If a user needs fresher data, shorten the scan interval in the options flow.
 - **Perfdata units are mostly missing.** Checkmk's `perf_data` field only carries the value, almost never the unit - the units live in a separate internal registry. `metrics.py` (`METRIC_SPECS`) maps the common metric names to the right HA unit + device class. Add new entries there when you spot a metric showing up as a raw number in the UI.
+- **Three-tier sensor visibility** (`metrics.visibility_for(name)`): a typical Linux host emits 200+ perfdata metrics, plus a status+problem sensor per service. To stay usable, sensors are split into:
+  - **Primary** (no `entity_category`, enabled): host status, host/site problem, the ~9 highest-value metrics (`util`, `mem_used_percent`, `fs_used_percent`, `load1`, `in`, `out`, `uptime`, `mem_used`, `fs_used`).
+  - **Diagnostic visible** (`EntityCategory.DIAGNOSTIC`, enabled): service status, service-problem binary, secondary metrics (`mem_free`, `disk_*_throughput`, TCP `ESTABLISHED/LISTEN/TIME_WAIT`, ...).
+  - **Diagnostic hidden** (`EntityCategory.DIAGNOSTIC`, disabled): the long tail of Linux/kernel/per-packet counters - present in the registry so a curious user can enable individually, but invisible by default.
+  Unknown metric names default to the hidden tier - safer than dumping arbitrary perfdata into the dashboard. **Important caveat:** entity-registry `enabled_default` only kicks in for *newly discovered* entities. Existing entities keep whatever state the user had after a version bump - tell affected users to remove + re-add the integration if they want the new defaults.
 
 ## Release workflow
 

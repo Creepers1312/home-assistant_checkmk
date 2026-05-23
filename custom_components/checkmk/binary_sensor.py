@@ -8,7 +8,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.const import CONF_URL
+from homeassistant.const import CONF_URL, EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -155,6 +155,11 @@ class CheckmkHostProblemSensor(_CheckmkBinaryBase):
 
 class CheckmkServiceProblemSensor(_CheckmkBinaryBase):
     """On while a single monitored service is in an unhandled problem state."""
+
+    # Mirror the service-status sensor: keep these binary indicators in the
+    # diagnostic section instead of cluttering the main dashboard with one
+    # entry per service on top of the already-existing service-status sensor.
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,

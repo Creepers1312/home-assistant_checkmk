@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONF_URL, PERCENTAGE
+from homeassistant.const import CONF_URL, PERCENTAGE, EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,7 +28,7 @@ from .const import (
     SERVICE_STATE,
 )
 from .coordinator import CheckmkCoordinator
-from .metrics import METRIC_SPECS
+from .metrics import METRIC_SPECS, visibility_for
 from .parsing import parse_perf_data
 
 # Maps a literal perfdata unit suffix (rare - most Checkmk metrics omit it) to
@@ -285,6 +285,10 @@ class CheckmkServiceSensor(CheckmkBaseEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(SERVICE_STATE.values())
     _attr_icon = "mdi:cog"
+    # A typical Linux host has dozens of services - hide their status sensors
+    # under the "Diagnostic" section so the main dashboard stays uncluttered.
+    # They are still enabled by default so the data is visible there.
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
@@ -361,6 +365,15 @@ class CheckmkMetricSensor(CheckmkBaseEntity, SensorEntity):
             self._spec_unit = spec.unit
         else:
             self._spec_unit = None
+
+        # Three-tier visibility: most metrics land in the "Diagnostic"
+        # section, only a small whitelist of dashboard-worthy metrics goes to
+        # the main sensor area. Unknown metrics default to "diagnostic
+        # hidden" so the dashboard stays sane no matter what plugin Checkmk
+        # ships next.
+        category, enabled_default = visibility_for(metric)
+        self._attr_entity_category = category
+        self._attr_entity_registry_enabled_default = enabled_default
 
     @property
     def _parsed(self) -> tuple[float, str | None] | None:
