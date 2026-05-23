@@ -1,0 +1,76 @@
+name: Bug Report
+description: Etwas funktioniert nicht wie erwartet.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Bug Report. Bitte fülle die Felder so weit wie möglich aus -
+        das ist deutlich hilfreicher als ein "geht nicht".
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Version der Integration
+      description: In Home Assistant unter Einstellungen → Geräte & Dienste → Checkmk
+      placeholder: "0.2.2"
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant Version
+      description: Einstellungen → Über
+      placeholder: "2026.5.x"
+    validations:
+      required: true
+
+  - type: input
+    id: cmk_version
+    attributes:
+      label: Checkmk Version
+      description: Checkmk → Help → Info
+      placeholder: "2.4.0p27 (cre/cee/cme)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: Was ist passiert?
+      description: Kurze Beschreibung des Problems.
+      placeholder: "Beim Aufruf von checkmk.acknowledge passiert ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Was hattest du erwartet?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevante Logs / Diagnose
+      description: |
+        Logs aktivieren (`configuration.yaml`):
+        ```yaml
+        logger:
+          logs:
+            custom_components.checkmk: debug
+        ```
+        Oder: Integration → ⋮ → Diagnose herunterladen, das Secret ist dort schon geschwärzt.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Zusätzliche Informationen
+      description: Screenshots, Anzahl Hosts/Services, Besonderheiten der Checkmk-Site, ...
+    validations:
+      required: false

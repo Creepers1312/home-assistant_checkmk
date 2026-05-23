@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Home Assistant Community Forum
+    url: https://community.home-assistant.io/
+    about: Allgemeine HA-Fragen und Hilfe von der Community.
+  - name: Checkmk Forum
+    url: https://forum.checkmk.com/
+    about: Fragen rund um die Checkmk-Konfiguration selbst (Hosts, Services, Regeln).

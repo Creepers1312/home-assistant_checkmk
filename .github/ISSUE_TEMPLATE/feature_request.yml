@@ -1,0 +1,35 @@
+name: Feature Request
+description: Vorschlag für eine neue Funktion oder Verbesserung.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+      description: Was geht heute nicht oder ist umständlich?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Vorschlag
+      description: Wie könnte die Lösung aussehen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativen, die du in Betracht gezogen hast
+      description: Workarounds, andere Integrationen, ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Zusätzliche Informationen
+      description: Links zu Checkmk-Dokumentation, Beispielen aus anderen HA-Integrationen, Screenshots ...
+    validations:
+      required: false
