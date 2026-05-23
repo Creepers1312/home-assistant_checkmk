@@ -18,7 +18,8 @@ custom_components/checkmk/
   manifest.json
   parsing.py             # HA-free helpers (parse_perf_data, is_problem) - testable in isolation
   sensor.py              # summary + host status + service status + metric sensors
-  services.py            # checkmk.acknowledge / schedule_downtime / reschedule_check
+  metrics.py             # METRIC_SPECS catalog: perfdata metric name -> HA unit + device_class + state_class
+  services.py            # checkmk.acknowledge / schedule_downtime
   services.yaml
   strings.json           # source of truth for translations - copy verbatim to translations/en.json
   translations/
@@ -54,6 +55,8 @@ hacs.json
 - **Service registration** lives in `async_setup_entry` and uses `hass.services.has_service` to be idempotent across reloads. Do not unregister on unload - HA keeps services registered for the life of the integration install.
 - **Orphan services**: Checkmk sometimes returns a service for a host that didn't appear in the host endpoint. `binary_sensor._discover` / `sensor._discover` build `host_names` from both sources so `via_device` always resolves.
 - **404 on the API root** = wrong site URL, not "unknown error". `api._request` maps it to `CheckmkConnectionError` so the config flow can surface `cannot_connect`.
+- **No `reschedule_check` service.** Checkmk's REST API does not expose reschedule_check anywhere (verified against the `/openapi-swagger-ui.json` of a 2.4 site - it lives only in the Web UI / Livestatus). Do not re-add it. If a user needs fresher data, shorten the scan interval in the options flow.
+- **Perfdata units are mostly missing.** Checkmk's `perf_data` field only carries the value, almost never the unit - the units live in a separate internal registry. `metrics.py` (`METRIC_SPECS`) maps the common metric names to the right HA unit + device class. Add new entries there when you spot a metric showing up as a raw number in the UI.
 
 ## Release workflow
 

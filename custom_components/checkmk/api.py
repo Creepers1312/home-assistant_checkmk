@@ -246,18 +246,3 @@ class CheckmkClient:
             },
         )
 
-    async def async_reschedule_host_check(self, host: str) -> None:
-        """Trigger an immediate host check."""
-        await self._post(
-            "domain-types/host/actions/reschedule_check/invoke",
-            {"host_name": host},
-        )
-
-    async def async_reschedule_service_check(
-        self, host: str, service: str
-    ) -> None:
-        """Trigger an immediate service check."""
-        await self._post(
-            "domain-types/service/actions/reschedule_check/invoke",
-            {"host_name": host, "service_description": service},
-        )

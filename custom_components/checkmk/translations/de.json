@@ -114,24 +114,6 @@
           "description": "Länge der Downtime in Minuten. Wird nur genutzt, wenn keine Endzeit angegeben ist."
         }
       }
-    },
-    "reschedule_check": {
-      "name": "Check sofort ausführen",
-      "description": "Stößt sofort einen erneuten Check für einen Host oder Service an.",
-      "fields": {
-        "config_entry_id": {
-          "name": "Checkmk-Site",
-          "description": "Die Checkmk-Integration, an die der Aufruf gehen soll (nur nötig, wenn mehrere konfiguriert sind)."
-        },
-        "host": {
-          "name": "Host",
-          "description": "Der in Checkmk bekannte Hostname."
-        },
-        "service": {
-          "name": "Service",
-          "description": "Service-Beschreibung. Leer lassen, um den Host selbst neu zu prüfen."
-        }
-      }
     }
   }
 }

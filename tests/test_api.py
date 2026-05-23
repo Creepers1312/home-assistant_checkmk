@@ -187,14 +187,3 @@ class TestPostActions:
         body = session.request.call_args.kwargs["json"]
         assert body["service_descriptions"] == ["CPU load", "Memory"]
 
-    @pytest.mark.asyncio
-    async def test_reschedule_host_check_hits_correct_endpoint(self) -> None:
-        session = _fake_session(204)
-        client = _client(session)
-        await client.async_reschedule_host_check("db01")
-
-        args = session.request.call_args.args
-        # request(method, url, ...) - the URL is the second positional arg.
-        assert args[1].endswith(
-            "/check_mk/api/1.0/domain-types/host/actions/reschedule_check/invoke"
-        )

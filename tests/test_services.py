@@ -38,8 +38,6 @@ def mock_client() -> MagicMock:
     client.async_acknowledge_service = AsyncMock()
     client.async_schedule_host_downtime = AsyncMock()
     client.async_schedule_service_downtime = AsyncMock()
-    client.async_reschedule_host_check = AsyncMock()
-    client.async_reschedule_service_check = AsyncMock()
     return client
 
 
@@ -215,35 +213,6 @@ class TestScheduleDowntime:
             )
 
 
-class TestRescheduleCheck:
-    async def test_host_recheck(
-        self,
-        hass: HomeAssistant,
-        loaded_entry: MockConfigEntry,
-        mock_client: MagicMock,
-    ) -> None:
-        await hass.services.async_call(
-            DOMAIN, "reschedule_check", {"host": "db01"}, blocking=True
-        )
-        mock_client.async_reschedule_host_check.assert_awaited_once_with("db01")
-
-    async def test_service_recheck(
-        self,
-        hass: HomeAssistant,
-        loaded_entry: MockConfigEntry,
-        mock_client: MagicMock,
-    ) -> None:
-        await hass.services.async_call(
-            DOMAIN,
-            "reschedule_check",
-            {"host": "db01", "service": "CPU load"},
-            blocking=True,
-        )
-        mock_client.async_reschedule_service_check.assert_awaited_once_with(
-            "db01", "CPU load"
-        )
-
-
 class TestConfigEntryResolution:
     async def test_unknown_config_entry_id_raises(
         self,
@@ -253,8 +222,12 @@ class TestConfigEntryResolution:
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
-                "reschedule_check",
-                {"host": "db01", "config_entry_id": "doesnotexist"},
+                "acknowledge",
+                {
+                    "host": "db01",
+                    "comment": "x",
+                    "config_entry_id": "doesnotexist",
+                },
                 blocking=True,
             )
 
@@ -278,14 +251,21 @@ class TestConfigEntryResolution:
 
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(
-                DOMAIN, "reschedule_check", {"host": "db01"}, blocking=True
+                DOMAIN,
+                "acknowledge",
+                {"host": "db01", "comment": "x"},
+                blocking=True,
             )
 
         # ... but works when the caller picks one explicitly.
         await hass.services.async_call(
             DOMAIN,
-            "reschedule_check",
-            {"host": "db01", "config_entry_id": loaded_entry.entry_id},
+            "acknowledge",
+            {
+                "host": "db01",
+                "comment": "x",
+                "config_entry_id": loaded_entry.entry_id,
+            },
             blocking=True,
         )
-        mock_client.async_reschedule_host_check.assert_awaited_with("db01")
+        mock_client.async_acknowledge_host.assert_awaited()

@@ -16,7 +16,6 @@ from .coordinator import CheckmkCoordinator
 
 SERVICE_ACKNOWLEDGE = "acknowledge"
 SERVICE_SCHEDULE_DOWNTIME = "schedule_downtime"
-SERVICE_RESCHEDULE_CHECK = "reschedule_check"
 
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ATTR_HOST = "host"
@@ -55,15 +54,6 @@ DOWNTIME_SCHEMA = vol.Schema(
         ),
     }
 )
-
-RESCHEDULE_SCHEMA = vol.Schema(
-    {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_HOST): cv.string,
-        vol.Optional(ATTR_SERVICE): cv.string,
-    }
-)
-
 
 def _resolve_coordinator(
     hass: HomeAssistant, call: ServiceCall
@@ -185,19 +175,6 @@ async def _async_schedule_downtime(hass: HomeAssistant, call: ServiceCall) -> No
     await coordinator.async_request_refresh()
 
 
-async def _async_reschedule_check(hass: HomeAssistant, call: ServiceCall) -> None:
-    coordinator = _resolve_coordinator(hass, call)
-    host = call.data[ATTR_HOST]
-    service = call.data.get(ATTR_SERVICE)
-    if service:
-        await _wrap_api(
-            coordinator.client.async_reschedule_service_check, host, service
-        )
-    else:
-        await _wrap_api(coordinator.client.async_reschedule_host_check, host)
-    await coordinator.async_request_refresh()
-
-
 @callback
 def async_register_services(hass: HomeAssistant) -> None:
     """Register the Checkmk integration services (idempotent)."""
@@ -210,17 +187,11 @@ def async_register_services(hass: HomeAssistant) -> None:
     async def _downtime(call: ServiceCall) -> None:
         await _async_schedule_downtime(hass, call)
 
-    async def _recheck(call: ServiceCall) -> None:
-        await _async_reschedule_check(hass, call)
-
     hass.services.async_register(
         DOMAIN, SERVICE_ACKNOWLEDGE, _ack, schema=ACKNOWLEDGE_SCHEMA
     )
     hass.services.async_register(
         DOMAIN, SERVICE_SCHEDULE_DOWNTIME, _downtime, schema=DOWNTIME_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_RESCHEDULE_CHECK, _recheck, schema=RESCHEDULE_SCHEMA
     )
 
 

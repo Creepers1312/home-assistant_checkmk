@@ -69,20 +69,3 @@ schedule_downtime:
           max: 10080
           unit_of_measurement: min
           mode: box
-
-reschedule_check:
-  fields:
-    config_entry_id:
-      example: 01HZX2K3JCQ5XQYY8B6S9V0PM5
-      selector:
-        config_entry:
-          integration: checkmk
-    host:
-      required: true
-      example: db01
-      selector:
-        text:
-    service:
-      example: CPU load
-      selector:
-        text:

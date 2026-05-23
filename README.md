@@ -17,8 +17,8 @@ die Monitoring-Daten aus [Checkmk](https://checkmk.com/) über die REST API
   Services warning/critical/unknown sowie offene (unbestätigte) Probleme
 - **Service-Metriken** – numerische Performance-Werte (z. B. CPU-Last, Temperatur,
   Füllstände) werden aus den Checkmk-Perfdaten geparst und als eigene Sensoren angelegt
-- **Services** – `checkmk.acknowledge`, `checkmk.schedule_downtime` und
-  `checkmk.reschedule_check` für Automationen und Skripte
+- **Services** – `checkmk.acknowledge` und `checkmk.schedule_downtime`
+  für Automationen und Skripte
 - Konfiguration vollständig über die Oberfläche (Config Flow), inkl. Re-Auth
 - Hosts und Services werden automatisch erkannt – neue Objekte erscheinen ohne Neustart
 - Jeder Host wird als eigenes Gerät dargestellt; seine Services hängen daran
@@ -106,19 +106,13 @@ data:
   comment: "Wartung"
 ```
 
-### `checkmk.reschedule_check`
-
-Stößt sofort einen erneuten Check an.
-
-```yaml
-service: checkmk.reschedule_check
-data:
-  host: db01
-  service: CPU load     # weglassen, um den Host selbst neu zu prüfen
-```
-
 Sind mehrere Checkmk-Integrationen konfiguriert, muss zusätzlich
 `config_entry_id` angegeben werden.
+
+> **Hinweis:** Ein „Reschedule check"-Service ist bewusst nicht enthalten —
+> Checkmks REST API exponiert diese Funktion nicht (sie ist nur über die
+> Weboberfläche oder Livestatus verfügbar). Bei Bedarf neue Daten lieber über
+> ein kürzeres **Aktualisierungsintervall** in den Optionen ziehen.
 
 ## Wie es funktioniert
 
@@ -128,10 +122,10 @@ Die Integration ruft zyklisch die Monitoring-Endpunkte der Checkmk REST API ab:
 - `GET /domain-types/service/collections/all` – Status aller Services
 
 Die Authentifizierung erfolgt per `Authorization: Bearer <user> <secret>`-Header.
-Service-Aufrufe (Acknowledge, Downtime, Recheck) verwenden zusätzlich die
-entsprechenden `POST`-Endpunkte. Standard ist nur lesender Zugriff
-(`iot_class: local_polling`); die schreibenden Aufrufe entstehen ausschließlich
-durch explizit aufgerufene Services.
+Service-Aufrufe (Acknowledge, Downtime) verwenden zusätzlich die entsprechenden
+`POST`-Endpunkte. Standard ist nur lesender Zugriff (`iot_class: local_polling`);
+die schreibenden Aufrufe entstehen ausschließlich durch explizit aufgerufene
+Services.
 
 ## Fehlerbehebung
 

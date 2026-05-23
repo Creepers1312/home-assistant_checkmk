@@ -114,24 +114,6 @@
           "description": "Length of the downtime in minutes. Used only when no end time is given."
         }
       }
-    },
-    "reschedule_check": {
-      "name": "Reschedule check",
-      "description": "Triggers an immediate recheck for a host or one of its services.",
-      "fields": {
-        "config_entry_id": {
-          "name": "Checkmk site",
-          "description": "Pick the Checkmk integration to send the request to (only required when more than one is configured)."
-        },
-        "host": {
-          "name": "Host",
-          "description": "Name of the host as known to Checkmk."
-        },
-        "service": {
-          "name": "Service",
-          "description": "Service description. Leave empty to recheck the host itself."
-        }
-      }
     }
   }
 }

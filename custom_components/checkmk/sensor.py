@@ -28,9 +28,12 @@ from .const import (
     SERVICE_STATE,
 )
 from .coordinator import CheckmkCoordinator
+from .metrics import METRIC_SPECS
 from .parsing import parse_perf_data
 
-# Maps a parsed Checkmk performance-data unit to a Home Assistant unit.
+# Maps a literal perfdata unit suffix (rare - most Checkmk metrics omit it) to
+# the corresponding Home Assistant unit. Used as a last-resort fallback when
+# ``METRIC_SPECS`` has no entry for the metric name.
 _UNIT_MAP = {"%": PERCENTAGE}
 
 
@@ -347,6 +350,18 @@ class CheckmkMetricSensor(CheckmkBaseEntity, SensorEntity):
         )
         self._attr_device_info = self._host_device(host)
 
+        # Apply known metric metadata at init time so HA's frontend can pick
+        # up unit, device class and long-term statistics behaviour without
+        # waiting for the first value to arrive.
+        if (spec := METRIC_SPECS.get(metric)) is not None:
+            if spec.device_class is not None:
+                self._attr_device_class = spec.device_class
+            if spec.state_class is not None:
+                self._attr_state_class = spec.state_class
+            self._spec_unit = spec.unit
+        else:
+            self._spec_unit = None
+
     @property
     def _parsed(self) -> tuple[float, str | None] | None:
         """Return the parsed ``(value, unit)`` for this metric."""
@@ -368,7 +383,12 @@ class CheckmkMetricSensor(CheckmkBaseEntity, SensorEntity):
 
     @property
     def native_unit_of_measurement(self) -> str | None:
-        """Return the unit reported by Checkmk, mapped where possible."""
+        """Return the unit for this metric.
+
+        Order: known metric (catalog) -> perfdata suffix -> mapped suffix -> None.
+        """
+        if self._spec_unit is not None:
+            return self._spec_unit
         parsed = self._parsed
         if not parsed or not parsed[1]:
             return None
