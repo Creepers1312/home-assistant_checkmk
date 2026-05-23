@@ -45,5 +45,93 @@
         }
       }
     }
+  },
+  "services": {
+    "acknowledge": {
+      "name": "Acknowledge problem",
+      "description": "Acknowledges a host or service problem in Checkmk.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk site",
+          "description": "Pick the Checkmk integration to send the request to (only required when more than one is configured)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Name of the host as known to Checkmk."
+        },
+        "service": {
+          "name": "Service",
+          "description": "Service description. Leave empty to acknowledge the host itself."
+        },
+        "comment": {
+          "name": "Comment",
+          "description": "Comment shown to other Checkmk users."
+        },
+        "sticky": {
+          "name": "Sticky",
+          "description": "Keep the acknowledgement until the host or service recovers."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Send a notification about the acknowledgement."
+        },
+        "persistent": {
+          "name": "Persistent comment",
+          "description": "Keep the comment even after the problem is resolved."
+        }
+      }
+    },
+    "schedule_downtime": {
+      "name": "Schedule downtime",
+      "description": "Schedules a fixed downtime for a host or some of its services.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk site",
+          "description": "Pick the Checkmk integration to send the request to (only required when more than one is configured)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Name of the host as known to Checkmk."
+        },
+        "services": {
+          "name": "Services",
+          "description": "List of service descriptions. Leave empty to schedule downtime for the entire host."
+        },
+        "comment": {
+          "name": "Comment",
+          "description": "Reason for the downtime, shown to other Checkmk users."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "Defaults to now if omitted."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "Mutually exclusive with duration."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Length of the downtime in minutes. Used only when no end time is given."
+        }
+      }
+    },
+    "reschedule_check": {
+      "name": "Reschedule check",
+      "description": "Triggers an immediate recheck for a host or one of its services.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk site",
+          "description": "Pick the Checkmk integration to send the request to (only required when more than one is configured)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Name of the host as known to Checkmk."
+        },
+        "service": {
+          "name": "Service",
+          "description": "Service description. Leave empty to recheck the host itself."
+        }
+      }
+    }
   }
 }

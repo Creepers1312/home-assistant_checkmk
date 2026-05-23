@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -13,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import CONF_URL, PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -29,12 +28,10 @@ from .const import (
     SERVICE_STATE,
 )
 from .coordinator import CheckmkCoordinator
+from .parsing import parse_perf_data
 
 # Maps a parsed Checkmk performance-data unit to a Home Assistant unit.
 _UNIT_MAP = {"%": PERCENTAGE}
-
-# Number followed by an optional unit, e.g. "0.05ms", "90%", "1024".
-_PERF_VALUE = re.compile(r"^(-?[0-9]*\.?[0-9]+)\s*(.*)$")
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -44,7 +41,7 @@ class CheckmkSummaryDescription(SensorEntityDescription):
     value_fn: Callable[[dict[str, Any]], int]
 
 
-def _count(items: dict, key: str, state: int) -> int:
+def _count(items: dict, state: int) -> int:
     """Count entries in ``items`` whose Livestatus ``state`` matches."""
     return sum(1 for entry in items.values() if entry.get("state") == state)
 
@@ -75,14 +72,14 @@ SUMMARY_SENSORS: tuple[CheckmkSummaryDescription, ...] = (
         name="Hosts down",
         icon="mdi:server-off",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _count(d["hosts"], "state", 1),
+        value_fn=lambda d: _count(d["hosts"], 1),
     ),
     CheckmkSummaryDescription(
         key="hosts_unreachable",
         name="Hosts unreachable",
         icon="mdi:server-network-off",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _count(d["hosts"], "state", 2),
+        value_fn=lambda d: _count(d["hosts"], 2),
     ),
     CheckmkSummaryDescription(
         key="services_total",
@@ -96,21 +93,21 @@ SUMMARY_SENSORS: tuple[CheckmkSummaryDescription, ...] = (
         name="Services warning",
         icon="mdi:alert",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _count(d["services"], "state", 1),
+        value_fn=lambda d: _count(d["services"], 1),
     ),
     CheckmkSummaryDescription(
         key="services_critical",
         name="Services critical",
         icon="mdi:alert-circle",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _count(d["services"], "state", 2),
+        value_fn=lambda d: _count(d["services"], 2),
     ),
     CheckmkSummaryDescription(
         key="services_unknown",
         name="Services unknown",
         icon="mdi:help-circle",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _count(d["services"], "state", 3),
+        value_fn=lambda d: _count(d["services"], 3),
     ),
     CheckmkSummaryDescription(
         key="problems",
@@ -120,30 +117,6 @@ SUMMARY_SENSORS: tuple[CheckmkSummaryDescription, ...] = (
         value_fn=_problems,
     ),
 )
-
-
-def parse_perf_data(perf_data: Any) -> dict[str, tuple[float, str | None]]:
-    """Parse a Checkmk ``perf_data`` field into ``{metric: (value, unit)}``."""
-    result: dict[str, tuple[float, str | None]] = {}
-    if not perf_data:
-        return result
-
-    if isinstance(perf_data, str):
-        tokens = perf_data.split()
-    elif isinstance(perf_data, (list, tuple)):
-        tokens = [str(token) for token in perf_data]
-    else:
-        return result
-
-    for token in tokens:
-        name, sep, rest = token.partition("=")
-        if not sep or not name:
-            continue
-        match = _PERF_VALUE.match(rest.split(";")[0])
-        if not match:
-            continue
-        result[name] = (float(match.group(1)), match.group(2) or None)
-    return result
 
 
 async def async_setup_entry(
@@ -172,7 +145,14 @@ async def async_setup_entry(
         data = coordinator.data or {"hosts": {}, "services": {}}
         new_entities: list[SensorEntity] = []
 
-        for host in data["hosts"]:
+        # Ensure every host referenced by a service has a host sensor, even if
+        # Checkmk reported the service before the host (or the host endpoint
+        # filtered it out). This guarantees ``via_device`` always resolves.
+        host_names = set(data["hosts"]) | {
+            host for host, _ in data["services"]
+        }
+
+        for host in host_names:
             if host not in known_hosts:
                 known_hosts.add(host)
                 new_entities.append(CheckmkHostSensor(coordinator, entry, host))
@@ -216,7 +196,7 @@ class CheckmkBaseEntity(CoordinatorEntity[CheckmkCoordinator]):
             name=f"Checkmk ({self._entry.title})",
             manufacturer="Checkmk",
             entry_type="service",
-            configuration_url=self._entry.data.get("url"),
+            configuration_url=self._entry.data.get(CONF_URL),
         )
 
     def _host_device(self, host: str) -> DeviceInfo:

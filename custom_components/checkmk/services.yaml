@@ -1,0 +1,88 @@
+acknowledge:
+  fields:
+    config_entry_id:
+      example: 01HZX2K3JCQ5XQYY8B6S9V0PM5
+      selector:
+        config_entry:
+          integration: checkmk
+    host:
+      required: true
+      example: db01
+      selector:
+        text:
+    service:
+      example: CPU load
+      selector:
+        text:
+    comment:
+      required: true
+      example: Investigating disk usage
+      selector:
+        text:
+          multiline: true
+    sticky:
+      default: true
+      selector:
+        boolean:
+    notify:
+      default: true
+      selector:
+        boolean:
+    persistent:
+      default: false
+      selector:
+        boolean:
+
+schedule_downtime:
+  fields:
+    config_entry_id:
+      example: 01HZX2K3JCQ5XQYY8B6S9V0PM5
+      selector:
+        config_entry:
+          integration: checkmk
+    host:
+      required: true
+      example: db01
+      selector:
+        text:
+    services:
+      example: ["CPU load", "Memory"]
+      selector:
+        object:
+    comment:
+      required: true
+      example: Planned maintenance window
+      selector:
+        text:
+          multiline: true
+    start_time:
+      selector:
+        datetime:
+    end_time:
+      selector:
+        datetime:
+    duration:
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 10080
+          unit_of_measurement: min
+          mode: box
+
+reschedule_check:
+  fields:
+    config_entry_id:
+      example: 01HZX2K3JCQ5XQYY8B6S9V0PM5
+      selector:
+        config_entry:
+          integration: checkmk
+    host:
+      required: true
+      example: db01
+      selector:
+        text:
+    service:
+      example: CPU load
+      selector:
+        text:

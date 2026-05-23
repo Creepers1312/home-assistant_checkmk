@@ -17,8 +17,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CheckmkClient
 from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_VERIFY_SSL
 from .coordinator import CheckmkCoordinator
+from .services import async_register_services
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 type CheckmkConfigEntry = ConfigEntry[CheckmkCoordinator]
 
@@ -42,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CheckmkConfigEntry) -> b
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
+    async_register_services(hass)
     return True
 
 

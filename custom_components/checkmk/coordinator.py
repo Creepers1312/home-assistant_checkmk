@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Any
@@ -41,8 +42,10 @@ class CheckmkCoordinator(DataUpdateCoordinator[CheckmkData]):
     async def _async_update_data(self) -> CheckmkData:
         """Fetch the current host and service state from Checkmk."""
         try:
-            hosts = await self.client.async_get_hosts()
-            services = await self.client.async_get_services()
+            hosts, services = await asyncio.gather(
+                self.client.async_get_hosts(),
+                self.client.async_get_services(),
+            )
         except CheckmkAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except CheckmkApiError as err:

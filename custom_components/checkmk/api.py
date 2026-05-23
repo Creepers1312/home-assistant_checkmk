@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Iterable
 
 from aiohttp import ClientError, ClientSession
 
@@ -77,15 +77,24 @@ class CheckmkClient:
             "Accept": "application/json",
         }
 
-    async def _get(
-        self, endpoint: str, params: list[tuple[str, str]] | None = None
+    async def _request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        params: list[tuple[str, str]] | None = None,
+        json: dict[str, Any] | None = None,
+        expect_json: bool = True,
     ) -> dict[str, Any]:
-        """Perform an authenticated GET request and return the JSON body."""
+        """Perform an authenticated request and return the JSON body."""
         url = f"{self._base}/{endpoint}"
+        headers = self._headers
+        if json is not None:
+            headers = {**headers, "Content-Type": "application/json"}
         try:
             async with asyncio.timeout(TIMEOUT):
-                response = await self._session.get(
-                    url, headers=self._headers, params=params
+                response = await self._session.request(
+                    method, url, headers=headers, params=params, json=json
                 )
         except asyncio.TimeoutError as err:
             raise CheckmkConnectionError(f"Timeout connecting to {url}") from err
@@ -94,16 +103,44 @@ class CheckmkClient:
 
         if response.status in (401, 403):
             raise CheckmkAuthError("Invalid Checkmk credentials")
+        # 404 on the API root usually means the site URL is wrong (missing site
+        # name, wrong protocol, etc.) - surface that as a connection problem so
+        # the config flow shows a useful error instead of a generic "unknown".
+        if response.status == 404:
+            raise CheckmkConnectionError(
+                f"Checkmk API not found at {url} (HTTP 404); "
+                "check the site URL"
+            )
         if response.status >= 400:
             body = await response.text()
             raise CheckmkApiError(
                 f"Checkmk API returned HTTP {response.status}: {body[:200]}"
             )
 
+        if not expect_json or response.status == 204:
+            return {}
         try:
             return await response.json()
         except (ValueError, ClientError) as err:
             raise CheckmkApiError(f"Invalid JSON response from {url}") from err
+
+    async def _get(
+        self, endpoint: str, params: list[tuple[str, str]] | None = None
+    ) -> dict[str, Any]:
+        """Perform an authenticated GET request."""
+        return await self._request("GET", endpoint, params=params)
+
+    async def _post(
+        self,
+        endpoint: str,
+        json: dict[str, Any] | None = None,
+        *,
+        expect_json: bool = False,
+    ) -> dict[str, Any]:
+        """Perform an authenticated POST request."""
+        return await self._request(
+            "POST", endpoint, json=json, expect_json=expect_json
+        )
 
     async def async_validate(self) -> dict[str, Any]:
         """Validate the connection and credentials; return the version info."""
@@ -120,3 +157,107 @@ class CheckmkClient:
         params = [("columns", column) for column in SERVICE_COLUMNS]
         data = await self._get("domain-types/service/collections/all", params)
         return [item.get("extensions", {}) for item in data.get("value", [])]
+
+    async def async_acknowledge_host(
+        self,
+        host: str,
+        *,
+        comment: str,
+        sticky: bool = True,
+        notify: bool = True,
+        persistent: bool = False,
+    ) -> None:
+        """Acknowledge problems on a host."""
+        await self._post(
+            "domain-types/acknowledge/collections/host",
+            {
+                "acknowledge_type": "host",
+                "host_name": host,
+                "comment": comment,
+                "sticky": sticky,
+                "notify": notify,
+                "persistent": persistent,
+            },
+        )
+
+    async def async_acknowledge_service(
+        self,
+        host: str,
+        service: str,
+        *,
+        comment: str,
+        sticky: bool = True,
+        notify: bool = True,
+        persistent: bool = False,
+    ) -> None:
+        """Acknowledge problems on a service."""
+        await self._post(
+            "domain-types/acknowledge/collections/service",
+            {
+                "acknowledge_type": "service",
+                "host_name": host,
+                "service_description": service,
+                "comment": comment,
+                "sticky": sticky,
+                "notify": notify,
+                "persistent": persistent,
+            },
+        )
+
+    async def async_schedule_host_downtime(
+        self,
+        host: str,
+        *,
+        start_time: str,
+        end_time: str,
+        comment: str,
+    ) -> None:
+        """Schedule a fixed downtime for a host."""
+        await self._post(
+            "domain-types/downtime/collections/host",
+            {
+                "downtime_type": "host",
+                "host_name": host,
+                "start_time": start_time,
+                "end_time": end_time,
+                "comment": comment,
+            },
+        )
+
+    async def async_schedule_service_downtime(
+        self,
+        host: str,
+        services: Iterable[str],
+        *,
+        start_time: str,
+        end_time: str,
+        comment: str,
+    ) -> None:
+        """Schedule a fixed downtime for one or more services on a host."""
+        await self._post(
+            "domain-types/downtime/collections/service",
+            {
+                "downtime_type": "service",
+                "host_name": host,
+                "service_descriptions": list(services),
+                "start_time": start_time,
+                "end_time": end_time,
+                "comment": comment,
+            },
+        )
+
+    async def async_reschedule_host_check(self, host: str) -> None:
+        """Trigger an immediate host check."""
+        await self._post(
+            "domain-types/host/actions/reschedule_check/invoke",
+            {"host_name": host},
+        )
+
+    async def async_reschedule_service_check(
+        self, host: str, service: str
+    ) -> None:
+        """Trigger an immediate service check."""
+        await self._post(
+            "domain-types/service/actions/reschedule_check/invoke",
+            {"host_name": host, "service_description": service},
+        )

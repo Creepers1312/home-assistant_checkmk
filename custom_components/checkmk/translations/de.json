@@ -45,5 +45,93 @@
         }
       }
     }
+  },
+  "services": {
+    "acknowledge": {
+      "name": "Problem bestätigen",
+      "description": "Bestätigt ein Host- oder Service-Problem in Checkmk.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk-Site",
+          "description": "Die Checkmk-Integration, an die der Aufruf gehen soll (nur nötig, wenn mehrere konfiguriert sind)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Der in Checkmk bekannte Hostname."
+        },
+        "service": {
+          "name": "Service",
+          "description": "Service-Beschreibung. Leer lassen, um den Host selbst zu bestätigen."
+        },
+        "comment": {
+          "name": "Kommentar",
+          "description": "Wird in Checkmk anderen Benutzern angezeigt."
+        },
+        "sticky": {
+          "name": "Sticky",
+          "description": "Bestätigung bleibt bestehen, bis der Host bzw. Service wieder OK ist."
+        },
+        "notify": {
+          "name": "Benachrichtigen",
+          "description": "Benachrichtigung über die Bestätigung verschicken."
+        },
+        "persistent": {
+          "name": "Kommentar dauerhaft",
+          "description": "Kommentar auch nach Lösung des Problems behalten."
+        }
+      }
+    },
+    "schedule_downtime": {
+      "name": "Downtime planen",
+      "description": "Plant eine feste Downtime für einen Host oder einzelne Services.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk-Site",
+          "description": "Die Checkmk-Integration, an die der Aufruf gehen soll (nur nötig, wenn mehrere konfiguriert sind)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Der in Checkmk bekannte Hostname."
+        },
+        "services": {
+          "name": "Services",
+          "description": "Liste der Service-Beschreibungen. Leer lassen für eine Downtime des gesamten Hosts."
+        },
+        "comment": {
+          "name": "Kommentar",
+          "description": "Grund für die Downtime, wird anderen Checkmk-Benutzern angezeigt."
+        },
+        "start_time": {
+          "name": "Startzeit",
+          "description": "Wenn leer, wird die aktuelle Zeit verwendet."
+        },
+        "end_time": {
+          "name": "Endzeit",
+          "description": "Schließt 'Dauer' aus."
+        },
+        "duration": {
+          "name": "Dauer",
+          "description": "Länge der Downtime in Minuten. Wird nur genutzt, wenn keine Endzeit angegeben ist."
+        }
+      }
+    },
+    "reschedule_check": {
+      "name": "Check sofort ausführen",
+      "description": "Stößt sofort einen erneuten Check für einen Host oder Service an.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Checkmk-Site",
+          "description": "Die Checkmk-Integration, an die der Aufruf gehen soll (nur nötig, wenn mehrere konfiguriert sind)."
+        },
+        "host": {
+          "name": "Host",
+          "description": "Der in Checkmk bekannte Hostname."
+        },
+        "service": {
+          "name": "Service",
+          "description": "Service-Beschreibung. Leer lassen, um den Host selbst neu zu prüfen."
+        }
+      }
+    }
   }
 }
