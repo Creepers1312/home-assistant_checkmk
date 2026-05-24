@@ -113,11 +113,51 @@ Hidden entities still exist in the entity registry — you can enable
 individual ones under **Settings → Devices & Services → Entities**
 (filter "Status: Disabled").
 
-> **Upgrading from older versions:** Home Assistant applies new
-> visibility defaults only to *newly discovered* entities. If you want
-> the new layout to take effect on a host that already had entities in
-> a previous version, remove and re-add the integration — or just
-> delete the entities you don't want via the entity registry.
+### Reducing entity count
+
+Even with the trimmed tiers, a typical Linux host in Checkmk can show
+up with 150+ entities in Home Assistant — most of them disabled
+hidden-tier metric sensors. Those don't poll, don't write to the
+recorder, and don't drive automations, so they cost effectively
+nothing at runtime. They do show up in selectors and the registry
+count, though, which can feel noisy.
+
+If you want a smaller registry, the highest-impact moves are:
+
+- **Exclude the Checkmk site host itself.** Checkmk monitors its own
+  server extensively (Apache, Postfix queue, all site components).
+  In most cases you don't need any of that in Home Assistant. Add the
+  hostname (often `localhost`) to **Exclude hosts**.
+- **Exclude noisy self-monitoring services.** A reasonable starter
+  pattern set for **Exclude services**:
+  ```
+  Check_MK*
+  NTP*
+  Kernel*
+  TCP Connections
+  Mount options of *
+  Systemd Service Summary
+  Systemd Socket Summary
+  ```
+- **Turn off perfdata sensors entirely** by unchecking *Create sensors
+  for service performance metrics*. You keep host/service status but
+  lose the numeric graphs.
+
+### Upgrading
+
+Home Assistant applies new visibility defaults only to *newly
+discovered* entities. If you want the post-upgrade layout to take
+effect on a host that already had entities in an earlier version,
+remove and re-add the integration — or just delete the entities you
+don't want via the entity registry.
+
+**v0.4.0 specifically** dropped the per-service `*_problem` binary
+sensors (one entity per Checkmk service is enough — `state != "ok"`
+already encodes "problem", and ack/downtime are exposed as attributes).
+Automations triggering on `binary_sensor.<host>_<service>_problem` must
+switch to either the service status sensor (`state != "ok"`) or the
+host-level `binary_sensor.<host>_problem`. The old binary sensors stay
+in the registry as **unavailable** until you remove them.
 
 ## Services
 
