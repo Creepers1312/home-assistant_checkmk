@@ -174,10 +174,21 @@ class TestOptionsFlow:
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
-            {"scan_interval": 120, "create_metric_sensors": False},
+            {
+                "scan_interval": 120,
+                "create_metric_sensors": False,
+                "host_include": "web-*\ndb-*",
+                "host_exclude": "",
+                "service_include": "",
+                "service_exclude": "NTP*\nCheck_MK Discovery",
+            },
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert entry.options == {
             "scan_interval": 120,
             "create_metric_sensors": False,
+            "host_include": "web-*\ndb-*",
+            "host_exclude": "",
+            "service_include": "",
+            "service_exclude": "NTP*\nCheck_MK Discovery",
         }

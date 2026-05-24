@@ -39,9 +39,20 @@
     "step": {
       "init": {
         "title": "Checkmk-Optionen",
+        "description": "Filter nutzen Shell-Globs (* ? [abc]), ein Muster pro Zeile. Leere Include-Liste = alles aufnehmen; Excludes haben Vorrang. Entitäten zu Hosts/Services, die nicht mehr passen, bleiben als 'nicht verfügbar' in der Registry, bis du sie entfernst.",
         "data": {
           "scan_interval": "Aktualisierungsintervall (Sekunden)",
-          "create_metric_sensors": "Sensoren für Service-Performance-Metriken erstellen"
+          "create_metric_sensors": "Sensoren für Service-Performance-Metriken erstellen",
+          "host_include": "Hosts einschließen (Glob-Muster, ein Muster pro Zeile)",
+          "host_exclude": "Hosts ausschließen (Glob-Muster, ein Muster pro Zeile)",
+          "service_include": "Services einschließen (Glob-Muster, ein Muster pro Zeile)",
+          "service_exclude": "Services ausschließen (Glob-Muster, ein Muster pro Zeile)"
+        },
+        "data_description": {
+          "host_include": "Nur Hosts, die mindestens einem Muster entsprechen, werden übernommen. Leer = alle Hosts.",
+          "host_exclude": "Hosts, die einem Muster entsprechen, werden verworfen - auch wenn ein Include-Muster passen würde.",
+          "service_include": "Nur Services, deren Beschreibung mindestens einem Muster entspricht, werden übernommen. Leer = alle Services.",
+          "service_exclude": "Services, deren Beschreibung einem Muster entspricht, werden verworfen."
         }
       }
     }

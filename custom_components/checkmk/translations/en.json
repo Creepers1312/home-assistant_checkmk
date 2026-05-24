@@ -39,9 +39,20 @@
     "step": {
       "init": {
         "title": "Checkmk options",
+        "description": "Filters use shell-style globs (* ? [abc]), one per line. Empty include means include everything; excludes always win. Entities for hosts/services that no longer match stay in the registry as unavailable until you remove them.",
         "data": {
           "scan_interval": "Update interval (seconds)",
-          "create_metric_sensors": "Create sensors for service performance metrics"
+          "create_metric_sensors": "Create sensors for service performance metrics",
+          "host_include": "Include hosts (glob patterns, one per line)",
+          "host_exclude": "Exclude hosts (glob patterns, one per line)",
+          "service_include": "Include services (glob patterns, one per line)",
+          "service_exclude": "Exclude services (glob patterns, one per line)"
+        },
+        "data_description": {
+          "host_include": "Only hosts matching at least one pattern are exposed. Leave empty to include all hosts.",
+          "host_exclude": "Hosts matching any pattern are dropped, even when an include pattern would match.",
+          "service_include": "Only services whose description matches at least one pattern are exposed. Leave empty to include all services.",
+          "service_exclude": "Services whose description matches any pattern are dropped."
         }
       }
     }

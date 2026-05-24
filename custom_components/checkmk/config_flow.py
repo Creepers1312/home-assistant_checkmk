@@ -21,16 +21,27 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+)
 
 from .api import CheckmkAuthError, CheckmkClient, CheckmkConnectionError
 from .const import (
     CONF_CREATE_METRIC_SENSORS,
+    CONF_HOST_EXCLUDE,
+    CONF_HOST_INCLUDE,
+    CONF_SERVICE_EXCLUDE,
+    CONF_SERVICE_INCLUDE,
     DEFAULT_CREATE_METRIC_SENSORS,
+    DEFAULT_PATTERN_LIST,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
 )
+
+_PATTERN_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -157,6 +168,26 @@ class CheckmkOptionsFlow(OptionsFlow):
                         CONF_CREATE_METRIC_SENSORS, DEFAULT_CREATE_METRIC_SENSORS
                     ),
                 ): bool,
+                vol.Optional(
+                    CONF_HOST_INCLUDE,
+                    default=options.get(CONF_HOST_INCLUDE, DEFAULT_PATTERN_LIST),
+                ): _PATTERN_SELECTOR,
+                vol.Optional(
+                    CONF_HOST_EXCLUDE,
+                    default=options.get(CONF_HOST_EXCLUDE, DEFAULT_PATTERN_LIST),
+                ): _PATTERN_SELECTOR,
+                vol.Optional(
+                    CONF_SERVICE_INCLUDE,
+                    default=options.get(
+                        CONF_SERVICE_INCLUDE, DEFAULT_PATTERN_LIST
+                    ),
+                ): _PATTERN_SELECTOR,
+                vol.Optional(
+                    CONF_SERVICE_EXCLUDE,
+                    default=options.get(
+                        CONF_SERVICE_EXCLUDE, DEFAULT_PATTERN_LIST
+                    ),
+                ): _PATTERN_SELECTOR,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

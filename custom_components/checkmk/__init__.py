@@ -15,8 +15,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CheckmkClient
-from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_VERIFY_SSL
+from .const import (
+    CONF_HOST_EXCLUDE,
+    CONF_HOST_INCLUDE,
+    CONF_SERVICE_EXCLUDE,
+    CONF_SERVICE_INCLUDE,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_VERIFY_SSL,
+)
 from .coordinator import CheckmkCoordinator
+from .parsing import parse_pattern_list
 from .services import async_register_services
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
@@ -37,7 +45,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: CheckmkConfigEntry) -> b
     )
 
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    coordinator = CheckmkCoordinator(hass, entry, client, scan_interval)
+    coordinator = CheckmkCoordinator(
+        hass,
+        entry,
+        client,
+        scan_interval,
+        host_include=parse_pattern_list(entry.options.get(CONF_HOST_INCLUDE)),
+        host_exclude=parse_pattern_list(entry.options.get(CONF_HOST_EXCLUDE)),
+        service_include=parse_pattern_list(
+            entry.options.get(CONF_SERVICE_INCLUDE)
+        ),
+        service_exclude=parse_pattern_list(
+            entry.options.get(CONF_SERVICE_EXCLUDE)
+        ),
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

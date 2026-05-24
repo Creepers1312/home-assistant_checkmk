@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.checkmk.parsing import is_problem, parse_perf_data
+from custom_components.checkmk.parsing import (
+    is_problem,
+    matches_filter,
+    parse_pattern_list,
+    parse_perf_data,
+)
 
 
 class TestParsePerfData:
@@ -77,3 +82,43 @@ class TestIsProblem:
     @pytest.mark.parametrize("state", [1, 2, 3])
     def test_all_non_ok_states_are_problems(self, state: int) -> None:
         assert is_problem({"state": state}) is True
+
+
+class TestParsePatternList:
+    def test_empty_or_none_returns_empty_list(self) -> None:
+        assert parse_pattern_list("") == []
+        assert parse_pattern_list(None) == []
+        assert parse_pattern_list([]) == []
+
+    def test_splits_lines_and_strips(self) -> None:
+        text = "  web-*\n\n  db-*  \nlb-?\n"
+        assert parse_pattern_list(text) == ["web-*", "db-*", "lb-?"]
+
+    def test_accepts_list_input(self) -> None:
+        assert parse_pattern_list([" web ", "", "db"]) == ["web", "db"]
+
+
+class TestMatchesFilter:
+    def test_no_filters_matches_everything(self) -> None:
+        assert matches_filter("anything", [], []) is True
+
+    def test_include_only_drops_non_matches(self) -> None:
+        assert matches_filter("web-01", ["web-*"], []) is True
+        assert matches_filter("db-01", ["web-*"], []) is False
+
+    def test_exclude_drops_match(self) -> None:
+        assert matches_filter("ntp", [], ["ntp"]) is False
+        assert matches_filter("cpu", [], ["ntp"]) is True
+
+    def test_exclude_wins_over_include(self) -> None:
+        # An include of ``*`` should still let the exclude drop the entry.
+        assert matches_filter("ntp", ["*"], ["ntp"]) is False
+
+    def test_glob_chars_supported(self) -> None:
+        assert matches_filter("eth0", ["eth?"], []) is True
+        assert matches_filter("vlan0", ["[ev]th?"], []) is False
+        assert matches_filter("Filesystem /var", ["Filesystem *"], []) is True
+
+    def test_match_is_case_sensitive(self) -> None:
+        # Checkmk host/service names are case-sensitive; the filter mirrors that.
+        assert matches_filter("WEB-01", ["web-*"], []) is False
