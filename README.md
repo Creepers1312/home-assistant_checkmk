@@ -1,158 +1,189 @@
-# Checkmk für Home Assistant
+# Checkmk for Home Assistant
 
 [![Validate](https://github.com/Creepers1312/home-assistant_checkmk/actions/workflows/validate.yml/badge.svg)](https://github.com/Creepers1312/home-assistant_checkmk/actions/workflows/validate.yml)
 [![hacs](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 
-Eine benutzerdefinierte [Home Assistant](https://www.home-assistant.io/)-Integration,
-die Monitoring-Daten aus [Checkmk](https://checkmk.com/) über die REST API
-(Checkmk 2.1+) abfragt und als Sensoren bereitstellt.
+A custom [Home Assistant](https://www.home-assistant.io/) integration that
+polls a [Checkmk](https://checkmk.com/) site through its REST API
+(Checkmk 2.1+) and exposes hosts, services, and selected performance
+metrics as Home Assistant entities.
 
-## Funktionen
+## Features
 
-- **Host-Status** – ein Sensor pro überwachtem Host (`up` / `down` / `unreachable`)
-- **Service-Status** – ein Sensor pro Service (`ok` / `warning` / `critical` / `unknown`)
-- **Binary Sensors** – `problem` pro Host und pro Service sowie ein
-  site-weiter `has_problems`-Sensor – ideal für Automationen
-- **Zusammenfassung** – site-weite Zähler: Hosts/Services gesamt, Hosts down/unreachable,
-  Services warning/critical/unknown sowie offene (unbestätigte) Probleme
-- **Service-Metriken** – numerische Performance-Werte (z. B. CPU-Last, Temperatur,
-  Füllstände) werden aus den Checkmk-Perfdaten geparst und als eigene Sensoren angelegt
-- **Services** – `checkmk.acknowledge` und `checkmk.schedule_downtime`
-  für Automationen und Skripte
-- Konfiguration vollständig über die Oberfläche (Config Flow), inkl. Re-Auth
-- Hosts und Services werden automatisch erkannt – neue Objekte erscheinen ohne Neustart
-- Jeder Host wird als eigenes Gerät dargestellt; seine Services hängen daran
+- **Host entities** — one device per monitored host, with a status sensor
+  (`up` / `down` / `unreachable`) and a host-level problem binary sensor
+  ideal for "anything unhandled on this machine?" automations.
+- **Service entities** — one status sensor per Checkmk service
+  (`ok` / `warning` / `critical` / `unknown`). Mirrors Checkmk's service
+  table: one row in Checkmk = one entity in Home Assistant.
+- **Site-wide aggregates** — counters for hosts/services total, hosts
+  down/unreachable, services warning/critical/unknown, and unhandled
+  open problems, plus a single `Problems` binary sensor that's on while
+  *any* unhandled problem exists anywhere.
+- **Service performance metrics** — numeric values from Checkmk's perfdata
+  (CPU load, filesystem usage, throughput, …) are parsed and exposed as
+  separate sensors with HA-native units and device classes.
+- **Host and service filters** — exclude noisy hosts (e.g. the Checkmk
+  site itself) or self-monitoring services (`Check_MK*`, `NTP*`, …) using
+  shell-style glob patterns in the options flow.
+- **Write-back services** — `checkmk.acknowledge` and
+  `checkmk.schedule_downtime` for use from automations or scripts.
+- Configuration is fully UI-driven (config flow), including re-auth.
+- Hosts and services are discovered automatically — new ones appear
+  without restarting Home Assistant.
 
-## Voraussetzungen
+## Requirements
 
-- Home Assistant 2024.12 oder neuer
-- Checkmk 2.1 oder neuer mit erreichbarer REST API
-- Ein Checkmk-Benutzer mit **Automation Secret**
+- Home Assistant 2024.12 or newer
+- Checkmk 2.1 or newer with a reachable REST API
+- A Checkmk user with an **Automation secret**
 
-### Automationsbenutzer in Checkmk anlegen
+### Creating an automation user in Checkmk
 
-1. In Checkmk: **Setup → Users → Add user**
-2. Einen Benutzer anlegen und unter *Authentication* ein **Automation secret** erzeugen
-3. Dem Benutzer eine Rolle mit Leserechten auf das Monitoring geben (z. B. `monitor`)
+1. **Setup → Users → Add user**
+2. Create the user and generate an **Automation secret** under
+   *Authentication*.
+3. Assign a role with read access to the monitoring view (e.g. `monitor`).
 
 ## Installation
 
-### Über HACS (empfohlen)
+### Via HACS (recommended)
 
-1. HACS → **Integrationen** → Menü oben rechts → **Benutzerdefinierte Repositories**
-2. Repository `https://github.com/Creepers1312/home-assistant_checkmk`
-   mit Kategorie **Integration** hinzufügen
-3. „Checkmk" suchen, installieren und Home Assistant neu starten
+1. HACS → **Integrations** → top-right menu → **Custom repositories**
+2. Add `https://github.com/Creepers1312/home-assistant_checkmk` with
+   category **Integration**.
+3. Search for "Checkmk", install, then restart Home Assistant.
 
-### Manuell
+### Manual
 
-Den Ordner `custom_components/checkmk` in das `custom_components`-Verzeichnis
-deiner Home-Assistant-Konfiguration kopieren und Home Assistant neu starten.
+Copy the `custom_components/checkmk` folder into the `custom_components`
+directory of your Home Assistant configuration and restart Home Assistant.
 
-## Einrichtung
+## Setup
 
-1. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Checkmk**
-2. Felder ausfüllen:
-   | Feld | Beispiel |
+1. **Settings → Devices & Services → Add Integration → Checkmk**
+2. Fill in:
+
+   | Field | Example |
    | --- | --- |
-   | Site-URL | `https://monitoring.example.com/mysite` |
-   | Automationsbenutzer | `automation` |
-   | Automations-Secret | das in Checkmk erzeugte Secret |
-   | SSL-Zertifikat prüfen | aktiviert lassen, außer bei selbstsignierten Zertifikaten |
+   | Site URL | `https://monitoring.example.com/mysite` |
+   | Automation user | `automation` |
+   | Automation secret | the secret generated in Checkmk |
+   | Verify SSL certificate | leave on, unless your certificate is self-signed |
 
-Die Site-URL ist die Basis-URL **inklusive Site-Namen**, aber ohne `/check_mk/...`.
+The site URL is the base URL **including the site name**, but without
+`/check_mk/...`.
 
-## Optionen
+## Options
 
-Über **Konfigurieren** an der Integration:
+Open **Configure** on the integration to access:
 
-- **Aktualisierungsintervall** – Abfrageintervall in Sekunden (Standard 60, Minimum 15)
-- **Sensoren für Service-Performance-Metriken erstellen** – legt fest, ob aus den
-  Checkmk-Perfdaten zusätzliche numerische Sensoren erzeugt werden
+- **Update interval (seconds)** — poll cadence. Default 60, minimum 15.
+- **Create sensors for service performance metrics** — toggles the
+  perfdata-derived metric sensors. Turn off if you only care about
+  service status and not the underlying numbers.
+- **Include hosts / Exclude hosts** — shell-style glob patterns, one
+  per line, that limit which monitored hosts the integration exposes.
+  Empty include = include everything; excludes always win over includes.
+- **Include services / Exclude services** — same, applied to service
+  descriptions.
 
-> **Hinweis:** Große Checkmk-Installationen haben sehr viele Services und Metriken.
-> Bei Performance-Problemen das Metrik-Feature deaktivieren oder das
-> Aktualisierungsintervall erhöhen. Nicht benötigte Sensoren lassen sich in
-> Home Assistant deaktivieren.
+Patterns use `*` (any chars), `?` (one char), and `[abc]` (a character
+from the set). They are case-sensitive — Checkmk's own naming is too.
 
-### Anzeige im Home Assistant
+> **Heads up:** existing entities for hosts/services that no longer
+> match a filter stay in the entity registry as **unavailable** until
+> you remove them manually (Settings → Devices & Services → entity →
+> Delete). Home Assistant does not auto-delete entities, even on a
+> breaking change.
 
-Damit das Dashboard übersichtlich bleibt, sind die Entitäten in drei Sichtbarkeits-Tiers eingeteilt:
+### How entities are laid out on a device
 
-| Tier | Sektion am Gerät | Default | Beispiele |
+Each monitored host becomes its own Home Assistant device. Below the
+device, entities are split into two visibility tiers to keep the page
+usable on hosts with hundreds of perfdata metrics:
+
+| Tier | Section | Default | Examples |
 | --- | --- | --- | --- |
-| **Primary** | "Sensoren" | aktiviert | Host-Status, Site-Problem, `util`, `mem_used_percent`, `fs_used_percent`, `load1`, Interface `in`/`out`, `uptime` |
-| **Diagnose (sichtbar)** | "Diagnose" | aktiviert | Service-Status pro Service, Service-Problem, `mem_free`/`mem_total`, Disk-Throughput, TCP `ESTABLISHED`/`LISTEN` |
-| **Diagnose (versteckt)** | "Diagnose" | deaktiviert | Memory-Submetriken (`zswap`, `unaccepted`, ...), Kernel-Counter, Interface-Paket-Zähler, TCP-Detail-States |
+| **Primary** | "Sensors" | enabled | host `Status`, host `Problem`, **every Checkmk service** (state enum), plus the highest-signal metrics: `util`, `mem_used_percent`, `fs_used_percent`, `load1`, interface `in` / `out`, `uptime`, `mem_used`, `fs_used` |
+| **Diagnostic (visible)** | "Diagnostic" | enabled | a small set of secondary metrics that primary doesn't cover: `disk_read_throughput`, `disk_write_throughput`, `disk_latency`, `disk_utilization`, `mem_available`, `swap_used`, `pagefile_used_percent` |
+| **Diagnostic (hidden)** | "Diagnostic" | disabled | the long tail — memory submetrics (`zswap`, `dirty`, …), kernel counters, TCP state breakdown, interface packet counters, etc. |
 
-Versteckte Entitäten existieren im Entity-Registry weiter — du kannst sie pro Stück enablen unter **Einstellungen → Geräte & Dienste → Entitäten** (Filter „Deaktiviert: nur").
+Hidden entities still exist in the entity registry — you can enable
+individual ones under **Settings → Devices & Services → Entities**
+(filter "Status: Disabled").
 
-> **Update von älteren Versionen:** HA wendet die neuen Defaults nur auf
-> *neu entdeckte* Entitäten an. Wenn du nach einem Update die alte volle
-> Liste loswerden willst, entferne die Integration einmal komplett und
-> richte sie neu ein.
+> **Upgrading from older versions:** Home Assistant applies new
+> visibility defaults only to *newly discovered* entities. If you want
+> the new layout to take effect on a host that already had entities in
+> a previous version, remove and re-add the integration — or just
+> delete the entities you don't want via the entity registry.
 
 ## Services
 
-Die Integration registriert drei Services, die per Automation oder im
-Entwicklerwerkzeug aufgerufen werden können:
+The integration registers two services that you can call from
+automations or via the **Developer Tools → Services** UI:
 
 ### `checkmk.acknowledge`
 
-Bestätigt ein Host- oder Service-Problem.
+Acknowledges a host or service problem in Checkmk.
 
 ```yaml
 service: checkmk.acknowledge
 data:
   host: db01
-  service: CPU load     # weglassen, um den Host selbst zu bestätigen
-  comment: "wird gerade untersucht"
+  service: CPU load     # omit to acknowledge the host itself
+  comment: "investigating"
 ```
 
 ### `checkmk.schedule_downtime`
 
-Plant eine feste Downtime. Entweder `end_time` oder `duration` (in Minuten,
-Standard 60) angeben – nicht beides.
+Schedules a fixed downtime. Provide either `end_time` or `duration`
+(in minutes, default 60) — not both.
 
 ```yaml
 service: checkmk.schedule_downtime
 data:
   host: db01
-  services: ["CPU load", "Memory"]   # weglassen für eine Host-Downtime
+  services: ["CPU load", "Memory"]   # omit for a host-level downtime
   duration: 30
-  comment: "Wartung"
+  comment: "maintenance"
 ```
 
-Sind mehrere Checkmk-Integrationen konfiguriert, muss zusätzlich
-`config_entry_id` angegeben werden.
+If multiple Checkmk integrations are configured, also pass
+`config_entry_id` to disambiguate.
 
-> **Hinweis:** Ein „Reschedule check"-Service ist bewusst nicht enthalten —
-> Checkmks REST API exponiert diese Funktion nicht (sie ist nur über die
-> Weboberfläche oder Livestatus verfügbar). Bei Bedarf neue Daten lieber über
-> ein kürzeres **Aktualisierungsintervall** in den Optionen ziehen.
+> **Note:** A "reschedule check" service is intentionally not provided —
+> Checkmk's REST API does not expose that action (it lives in the web UI
+> and Livestatus only). To get fresher data, shorten the **Update
+> interval** in the options flow.
 
-## Wie es funktioniert
+## How it works
 
-Die Integration ruft zyklisch die Monitoring-Endpunkte der Checkmk REST API ab:
+The integration polls two REST endpoints on each update cycle:
 
-- `GET /domain-types/host/collections/all` – Status aller Hosts
-- `GET /domain-types/service/collections/all` – Status aller Services
+- `GET /domain-types/host/collections/all` — state of all hosts
+- `GET /domain-types/service/collections/all` — state of all services
 
-Die Authentifizierung erfolgt per `Authorization: Bearer <user> <secret>`-Header.
-Service-Aufrufe (Acknowledge, Downtime) verwenden zusätzlich die entsprechenden
-`POST`-Endpunkte. Standard ist nur lesender Zugriff (`iot_class: local_polling`);
-die schreibenden Aufrufe entstehen ausschließlich durch explizit aufgerufene
-Services.
+Authentication uses the `Authorization: Bearer <user> <secret>` header.
+The write-back services (acknowledge, downtime) call the corresponding
+`POST` endpoints. The integration is `iot_class: local_polling` — by
+default it only reads; writes happen exclusively when you explicitly
+call one of the services.
 
-## Fehlerbehebung
+Filtering is applied inside the data update coordinator, *before* any
+entity is created. Both the per-service entities and the site-wide
+summary counters always reflect the filtered view.
 
-| Problem | Ursache / Lösung |
+## Troubleshooting
+
+| Symptom | Likely cause / fix |
 | --- | --- |
-| `invalid_auth` | Benutzername oder Secret falsch, oder Benutzer ohne Monitoring-Rechte |
-| `cannot_connect` | URL/Port falsch, Firewall, oder SSL-Prüfung schlägt fehl |
-| Keine Sensoren | Prüfen, ob der Benutzer das Monitoring sehen darf |
+| `invalid_auth` | Wrong username or secret, or the user has no monitoring access |
+| `cannot_connect` | Wrong URL or port, firewall, or SSL verification failing |
+| No entities | Check that the user can see the monitoring view in Checkmk |
 
-Detaillierte Logs aktivieren in `configuration.yaml`:
+Enable detailed logs in `configuration.yaml`:
 
 ```yaml
 logger:
@@ -161,59 +192,59 @@ logger:
     custom_components.checkmk: debug
 ```
 
-Diagnosedaten lassen sich über die Integrationsseite herunterladen
-(das Secret wird dabei geschwärzt).
+Diagnostics can be downloaded from the integration page (the secret is
+redacted automatically).
 
-## Lokal mit Docker testen
+## Local development with Docker
 
-Im Repo liegt eine [`docker-compose.yml`](docker-compose.yml), die parallel
-einen Home‑Assistant‑Container und eine Checkmk Raw Edition startet. Der
-`custom_components/checkmk`‑Ordner wird live in den HA‑Container gemountet,
-sodass Code‑Änderungen nach einem HA‑Neustart sofort wirken.
+The repo ships a [`docker-compose.yml`](docker-compose.yml) that starts
+a Home Assistant container and a Checkmk Raw Edition container side by
+side. The `custom_components/checkmk` folder is bind-mounted into the
+HA container, so code edits take effect after a single HA restart.
 
 ```bash
 docker compose up -d
 ```
 
-Das legt einen `./config/`‑Ordner für den HA‑State an (von `.gitignore`
-abgedeckt). Beide Container brauchen beim ersten Start ~30 Sekunden.
+This creates a `./config/` directory for the HA state (covered by
+`.gitignore`). Both containers need about 30 seconds for the first start.
 
-### Checkmk-Site initialisieren
+### Initialise the Checkmk site
 
-1. http://localhost:5000/cmk öffnen, einloggen als `cmkadmin` /
-   `cmkadminpw` (siehe `CMK_PASSWORD` in der Compose‑Datei).
-2. **Setup → Users → Add user** und einen Benutzer `automation` anlegen.
-3. Unter *Authentication* ein **Automation secret** generieren und
-   kopieren. Die Rolle `monitor` (oder höher) zuweisen.
-4. Oben rechts **Activate pending changes** klicken.
-5. Optional: damit überhaupt ein Host überwacht wird, **Setup → Hosts →
-   Add host** ausführen und ein Service Discovery durchlaufen.
+1. Open <http://localhost:5000/cmk> and log in as `cmkadmin` /
+   `cmkadminpw` (see `CMK_PASSWORD` in the compose file).
+2. **Setup → Users → Add user**, create a user `automation`.
+3. Under *Authentication*, generate an **Automation secret** and copy
+   it. Give the user the role `monitor` (or higher).
+4. Click **Activate pending changes** in the top-right.
+5. Optionally, **Setup → Hosts → Add host** and run a service discovery
+   so you have something to monitor.
 
-### Integration in Home Assistant einrichten
+### Configure the integration in Home Assistant
 
-1. http://localhost:8123 öffnen und das HA‑Onboarding durchklicken.
-2. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Checkmk**.
-3. Felder:
-   - Site‑URL: `http://checkmk:5000/cmk` (über den compose‑internen Namen,
-     nicht `localhost`)
-   - Automationsbenutzer: `automation`
-   - Automations‑Secret: das eben erzeugte Secret
-4. Nach dem Speichern erscheinen die Hub‑, Host‑ und Service‑Geräte.
+1. Open <http://localhost:8123> and walk through HA's onboarding.
+2. **Settings → Devices & Services → Add Integration → Checkmk**.
+3. Fill in:
+   - Site URL: `http://checkmk:5000/cmk` (compose-internal hostname,
+     **not** `localhost`)
+   - Automation user: `automation`
+   - Automation secret: the secret you just generated
+4. After saving, the hub, host, and service entities appear.
 
-### Nützliche Befehle
+### Useful commands
 
-| Zweck | Befehl |
+| Purpose | Command |
 | --- | --- |
-| Logs der Integration | `docker logs -f ha-checkmk-dev` |
-| HA nach Code‑Änderung neu laden | `docker restart ha-checkmk-dev` |
-| Stack stoppen | `docker compose down` |
-| Stack inkl. State löschen | `docker compose down -v && rm -rf config` |
+| Tail integration logs | `docker logs -f ha-checkmk-dev` |
+| Reload HA after a code change | `docker restart ha-checkmk-dev` |
+| Stop the stack | `docker compose down` |
+| Stop and wipe state | `docker compose down -v && rm -rf config` |
 
-## Haftungsausschluss
+## Disclaimer
 
-Dieses Projekt ist ein inoffizielles Community-Projekt und steht in keiner
-Verbindung zur Checkmk GmbH. „Checkmk" ist eine Marke ihrer jeweiligen Inhaber.
+This is an unofficial community project, not affiliated with Checkmk
+GmbH. "Checkmk" is a trademark of its respective owners.
 
-## Lizenz
+## License
 
 [MIT](LICENSE)
