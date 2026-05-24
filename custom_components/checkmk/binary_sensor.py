@@ -8,12 +8,12 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.const import CONF_URL, EntityCategory
+from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.util import dt as dt_util, slugify
+from homeassistant.util import dt as dt_util
 
 from . import CheckmkConfigEntry
 from .const import DOMAIN
@@ -32,28 +32,20 @@ async def async_setup_entry(
     async_add_entities([CheckmkSiteProblemSensor(coordinator, entry)])
 
     known_hosts: set[str] = set()
-    known_services: set[tuple[str, str]] = set()
 
     @callback
     def _discover() -> None:
         data = coordinator.data or {"hosts": {}, "services": {}}
-        new_entities: list[BinarySensorEntity] = []
 
         # Treat host names referenced by services as known so we always have a
         # host-level problem sensor even if Checkmk omitted the host record.
         host_names = set(data["hosts"]) | {h for h, _ in data["services"]}
 
+        new_entities: list[BinarySensorEntity] = []
         for host in host_names:
             if host not in known_hosts:
                 known_hosts.add(host)
                 new_entities.append(CheckmkHostProblemSensor(coordinator, entry, host))
-
-        for key in data["services"]:
-            if key not in known_services:
-                known_services.add(key)
-                new_entities.append(
-                    CheckmkServiceProblemSensor(coordinator, entry, key)
-                )
 
         if new_entities:
             async_add_entities(new_entities)
@@ -137,49 +129,6 @@ class CheckmkHostProblemSensor(_CheckmkBinaryBase):
     @property
     def _data(self) -> dict[str, Any] | None:
         return (self.coordinator.data or {}).get("hosts", {}).get(self._host)
-
-    @property
-    def available(self) -> bool:
-        return super().available and self._data is not None
-
-    @property
-    def is_on(self) -> bool | None:
-        if not (data := self._data):
-            return None
-        return is_problem(data)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        return _common_attributes(self._data or {})
-
-
-class CheckmkServiceProblemSensor(_CheckmkBinaryBase):
-    """On while a single monitored service is in an unhandled problem state."""
-
-    # Mirror the service-status sensor: keep these binary indicators in the
-    # diagnostic section instead of cluttering the main dashboard with one
-    # entry per service on top of the already-existing service-status sensor.
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self,
-        coordinator: CheckmkCoordinator,
-        entry: CheckmkConfigEntry,
-        key: tuple[str, str],
-    ) -> None:
-        super().__init__(coordinator, entry)
-        self._key = key
-        host, description = key
-        self._attr_name = f"{description} problem"
-        self._attr_unique_id = (
-            f"{entry.entry_id}_service_problem_"
-            f"{slugify(host)}_{slugify(description)}"
-        )
-        self._attr_device_info = self._host_device(host)
-
-    @property
-    def _data(self) -> dict[str, Any] | None:
-        return (self.coordinator.data or {}).get("services", {}).get(self._key)
 
     @property
     def available(self) -> bool:

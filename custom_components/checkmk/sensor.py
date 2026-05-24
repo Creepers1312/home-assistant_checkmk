@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONF_URL, PERCENTAGE, EntityCategory
+from homeassistant.const import CONF_URL, PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -285,10 +285,6 @@ class CheckmkServiceSensor(CheckmkBaseEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(SERVICE_STATE.values())
     _attr_icon = "mdi:cog"
-    # A typical Linux host has dozens of services - hide their status sensors
-    # under the "Diagnostic" section so the main dashboard stays uncluttered.
-    # They are still enabled by default so the data is visible there.
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
