@@ -143,13 +143,44 @@ If you want a smaller registry, the highest-impact moves are:
   for service performance metrics*. You keep host/service status but
   lose the numeric graphs.
 
+### Cleaning up leftover entities
+
+Whenever you change host/service filters, toggle the perfdata-sensor
+option, or upgrade across a tier-default change, Home Assistant
+leaves the old entities in the registry as **"unavailable"** instead
+of deleting them. This is HA's standard behavior for every
+integration — it protects automations from being silently broken if a
+device disappears for a moment.
+
+Same thing happens if Checkmk itself stops reporting a metric you
+used to see (plugin update, service renamed, host removed from the
+Checkmk site): the entity that used to back it stays in the registry,
+showing "unavailable" with the source-missing icon.
+
+Two ways to clean it up:
+
+- **Per entity** — Settings → Devices & Services → device → click the
+  unavailable entity → gear icon → *Delete*. Fine for a handful of
+  leftovers.
+- **Full reset** — Settings → Devices & Services → Checkmk → ⋮ →
+  *Delete*, then re-add the integration with the same site URL and
+  credentials and re-enter your filters. The fresh discovery only
+  creates entities that match the *current* tier defaults and your
+  *current* filters. Fastest way back to a minimal registry after a
+  big filter change or a major-version upgrade.
+
+The integration deliberately does **not** delete entities on its own.
+A short Checkmk outage would otherwise wipe configured automations,
+which would feel much worse than a few "unavailable" badges.
+
 ### Upgrading
 
 Home Assistant applies new visibility defaults only to *newly
 discovered* entities. If you want the post-upgrade layout to take
 effect on a host that already had entities in an earlier version,
-remove and re-add the integration — or just delete the entities you
-don't want via the entity registry.
+remove and re-add the integration (see *Cleaning up leftover entities*
+above) — or selectively delete the entities you don't want via the
+entity registry.
 
 **v0.4.0 specifically** dropped the per-service `*_problem` binary
 sensors (one entity per Checkmk service is enough — `state != "ok"`
@@ -157,7 +188,8 @@ already encodes "problem", and ack/downtime are exposed as attributes).
 Automations triggering on `binary_sensor.<host>_<service>_problem` must
 switch to either the service status sensor (`state != "ok"`) or the
 host-level `binary_sensor.<host>_problem`. The old binary sensors stay
-in the registry as **unavailable** until you remove them.
+in the registry as **unavailable** until you remove them — easiest via
+the full reset above.
 
 ## Services
 
