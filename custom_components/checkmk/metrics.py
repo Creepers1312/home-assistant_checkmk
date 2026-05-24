@@ -246,30 +246,14 @@ PRIMARY_METRICS: Final[frozenset[str]] = frozenset(
 
 DIAGNOSTIC_VISIBLE_METRICS: Final[frozenset[str]] = frozenset(
     {
-        "user",
-        "system",
-        "wait",
-        "iowait",
-        "load5",
-        "load15",
-        "mem_free",
-        "mem_total",
-        "mem_available",
-        "fs_size",
-        "fs_free",
+        # Disk I/O - genuinely unique signal, not duplicated elsewhere.
         "disk_read_throughput",
         "disk_write_throughput",
         "disk_latency",
         "disk_utilization",
-        "ESTABLISHED",
-        "LISTEN",
-        "TIME_WAIT",
-        "growth",
-        "trend",
-        "thread_usage",
-        "threads",
+        # Memory pressure indicators that the primary tier doesn't cover.
+        "mem_available",
         "swap_used",
-        "swap_free",
         "pagefile_used_percent",
     }
 )
