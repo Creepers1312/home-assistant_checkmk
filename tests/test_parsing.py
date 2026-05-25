@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from custom_components.checkmk.parsing import (
+    extract_macs,
     is_problem,
     matches_filter,
     parse_pattern_list,
@@ -122,3 +123,60 @@ class TestMatchesFilter:
     def test_match_is_case_sensitive(self) -> None:
         # Checkmk host/service names are case-sensitive; the filter mirrors that.
         assert matches_filter("WEB-01", ["web-*"], []) is False
+
+
+class TestExtractMacs:
+    def test_lnx_if_plugin_output(self) -> None:
+        # The exact format reported by the Linux interface check.
+        service = {
+            "plugin_output": (
+                "[ens34], (up), MAC: 00:0C:29:6D:C5:A9, Speed: 10 GBit/s, "
+                "In: 144 B/s (<0.01%), Out: 515 B/s (<0.01%)"
+            )
+        }
+        assert extract_macs([service]) == {"00:0c:29:6d:c5:a9"}
+
+    def test_winperf_if_hyphen_format_is_normalised(self) -> None:
+        # Windows interface checks historically use hyphen separators; the
+        # helper must normalise these to the colon form HA expects.
+        service = {"plugin_output": "[Ethernet 2] MAC: 00-0C-29-6D-C5-A9, up"}
+        assert extract_macs([service]) == {"00:0c:29:6d:c5:a9"}
+
+    def test_multiple_interfaces_collect_all_macs(self) -> None:
+        services = [
+            {"plugin_output": "[eth0], (up), MAC: aa:bb:cc:dd:ee:01"},
+            {"plugin_output": "[eth1], (up), MAC: aa:bb:cc:dd:ee:02"},
+        ]
+        assert extract_macs(services) == {
+            "aa:bb:cc:dd:ee:01",
+            "aa:bb:cc:dd:ee:02",
+        }
+
+    def test_duplicate_macs_are_deduplicated(self) -> None:
+        services = [
+            {"plugin_output": "MAC: aa:bb:cc:dd:ee:01"},
+            {"plugin_output": "MAC: AA:BB:CC:DD:EE:01"},
+        ]
+        assert extract_macs(services) == {"aa:bb:cc:dd:ee:01"}
+
+    def test_placeholder_mac_is_dropped(self) -> None:
+        # 00:00:00:00:00:00 would falsely link every host that reports it.
+        service = {"plugin_output": "MAC: 00:00:00:00:00:00"}
+        assert extract_macs([service]) == set()
+
+    def test_services_without_mac_are_ignored(self) -> None:
+        services = [
+            {"plugin_output": "Total CPU: 5.10%"},
+            {"plugin_output": "Used: 6.83% - 398 GiB of 5.69 TiB"},
+            {"plugin_output": None},
+            {},
+        ]
+        assert extract_macs(services) == set()
+
+    def test_empty_input(self) -> None:
+        assert extract_macs([]) == set()
+
+    def test_non_dict_entries_are_skipped(self) -> None:
+        # Defensive: the coordinator should always hand us dicts, but the
+        # helper must not crash if anything else slips through.
+        assert extract_macs([None, "not a dict", 42]) == set()

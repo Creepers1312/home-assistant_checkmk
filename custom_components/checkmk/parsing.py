@@ -3,11 +3,23 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from fnmatch import fnmatchcase
 from typing import Any
 
 # Number followed by an optional unit, e.g. "0.05ms", "90%", "1024".
 _PERF_VALUE = re.compile(r"^(-?[0-9]*\.?[0-9]+)\s*(.*)$")
+
+# Six hex pairs separated by ``:`` or ``-`` and labelled ``MAC:``. Matches the
+# format used by Checkmk's interface checks (``lnx_if`` uses colons,
+# ``winperf_if`` historically uses hyphens).
+_MAC_PATTERN = re.compile(
+    r"MAC:\s*([0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5})"
+)
+
+# All-zero MAC sometimes reported by virtual or disabled interfaces - not a
+# real identity, so it must not be used to link devices across integrations.
+_PLACEHOLDER_MAC = "00:00:00:00:00:00"
 
 
 def parse_perf_data(perf_data: Any) -> dict[str, tuple[float, str | None]]:
@@ -65,6 +77,27 @@ def parse_pattern_list(text: Any) -> list[str]:
     else:
         lines = str(text).splitlines()
     return [line.strip() for line in lines if line.strip()]
+
+
+def extract_macs(services: Iterable[dict[str, Any]]) -> set[str]:
+    """Collect interface MAC addresses from a host's service plugin outputs.
+
+    Checkmk's interface checks embed the MAC in the plugin output, e.g.
+    ``[ens34], (up), MAC: 00:0C:29:6D:C5:A9, Speed: ...``. We pull every
+    occurrence out of any service belonging to one host, normalise to
+    lowercase colon-separated form, and drop the all-zeros placeholder so
+    virtual NICs don't accidentally link unrelated hosts together.
+    """
+    macs: set[str] = set()
+    for service in services:
+        text = service.get("plugin_output") if isinstance(service, dict) else None
+        if not isinstance(text, str):
+            continue
+        for match in _MAC_PATTERN.finditer(text):
+            mac = match.group(1).replace("-", ":").lower()
+            if mac != _PLACEHOLDER_MAC:
+                macs.add(mac)
+    return macs
 
 
 def matches_filter(

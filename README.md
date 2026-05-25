@@ -28,6 +28,13 @@ metrics as Home Assistant entities.
   shell-style glob patterns in the options flow.
 - **Write-back services** — `checkmk.acknowledge` and
   `checkmk.schedule_downtime` for use from automations or scripts.
+- **Device linking with other integrations** — when Checkmk monitors
+  network interfaces on a host (`lnx_if` / `winperf_if` checks), the
+  MAC addresses are read from the existing plugin output and attached
+  to the host device. Home Assistant then merges that device with the
+  same physical machine seen by other integrations (FRITZ!Box Tools,
+  UniFi, router-based device trackers, …) so the "Connected via" panel
+  links straight from Checkmk to the rest of the device's context.
 - Configuration is fully UI-driven (config flow), including re-auth.
 - Hosts and services are discovered automatically — new ones appear
   without restarting Home Assistant.
